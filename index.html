@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ext-websocket manual: native PHP WebSocket extension with RFC 6455 protocol helpers and a callback-based server runtime.">
+  <title>ext-websocket manual</title>
+  <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="brand" href="#top" aria-label="ext-websocket manual">
+        <span class="brand-mark">WS</span>
+        <span>ext-websocket</span>
+      </a>
+      <nav class="top-links" aria-label="Project links">
+        <a href="https://github.com/axcherednikov/php-websocket">GitHub</a>
+        <a href="#installation">Install</a>
+        <a href="#class-reference">Reference</a>
+        <a href="#production">Production</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout" id="top">
+    <aside class="sidebar">
+      <h2>Manual</h2>
+      <nav aria-label="Manual navigation">
+        <a href="#introduction">Introduction</a>
+        <a href="#installation">Installation</a>
+        <a href="#quick-start">Quick Start</a>
+        <a href="#runtime-model">Runtime Model</a>
+        <a href="#protocol-helpers">Protocol Helpers</a>
+        <a href="#class-reference">Class Reference</a>
+        <a href="#server">WebSocket\Server</a>
+        <a href="#server-options">WebSocket\ServerOptions</a>
+        <a href="#connection">WebSocket\Connection</a>
+        <a href="#protocol">WebSocket\Protocol</a>
+        <a href="#frames">Frames and Types</a>
+        <a href="#production">Production</a>
+        <a href="#benchmarks">Benchmarks</a>
+        <a href="#ide-support">IDE Support</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <article class="article">
+        <section class="hero" id="introduction">
+          <p class="eyebrow">PHP extension manual</p>
+          <h1>Native WebSocket runtime for PHP</h1>
+          <p class="lead">
+            <code>ext-websocket</code> keeps RFC 6455 protocol work in C and exposes a small PHP API
+            for callback-based WebSocket servers, synchronous PHP code, and protocol helpers that can
+            be reused by higher-level runtimes.
+          </p>
+
+          <div class="quick-grid" aria-label="Project summary">
+            <div class="quick-item">
+              <strong>Native core</strong>
+              <span>HTTP Upgrade, frame parsing, masking, fragmentation, ping/pong, close frames.</span>
+            </div>
+            <div class="quick-item">
+              <strong>PHP 8.1+</strong>
+              <span>Small public API with typed value objects and IDE/static-analysis stubs.</span>
+            </div>
+            <div class="quick-item">
+              <strong>Event-driven runtime</strong>
+              <span>Non-blocking sockets with epoll, kqueue, poll, and select drivers.</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="installation">
+          <h2>Installation</h2>
+          <p>Install the extension with PIE:</p>
+          <pre><code>pie install axcherednikov/php-websocket</code></pre>
+
+          <p>Or build from source:</p>
+          <pre><code>phpize
+./configure --enable-websocket
+make
+make test
+sudo make install</code></pre>
+
+          <p>Enable the extension in PHP:</p>
+          <pre><code>extension=websocket</code></pre>
+
+          <p>Verify that PHP can load it:</p>
+          <pre><code>php -m | grep websocket</code></pre>
+        </section>
+
+        <section id="quick-start">
+          <h2>Quick Start</h2>
+          <p>A minimal echo server:</p>
+          <pre><code>&lt;?php
+
+use WebSocket\Connection;
+use WebSocket\MessageType;
+use WebSocket\Server;
+use WebSocket\ServerOptions;
+
+$server = new Server(new ServerOptions(
+    maxMessageSize: 1024 * 1024,
+));
+
+$server-&gt;listen('127.0.0.1', 8080);
+
+$server-&gt;onOpen(static function (Connection $connection): void {
+    echo "open {$connection-&gt;id}\n";
+});
+
+$server-&gt;onMessage(static function (Connection $connection, string $message): void {
+    $connection-&gt;send($message, MessageType::Text);
+});
+
+$server-&gt;onClose(static function (Connection $connection): void {
+    echo "close {$connection-&gt;id}\n";
+});
+
+$server-&gt;run();</code></pre>
+        </section>
+
+        <section id="runtime-model">
+          <h2>Runtime Model</h2>
+          <p>
+            The server runtime is asynchronous internally and callback-based externally. The extension
+            owns its event loop when <code>WebSocket\Server::run()</code> is called.
+          </p>
+
+          <div class="architecture">
+            <div>
+              <strong>PHP API</strong>
+              <span><code>Server</code>, <code>Connection</code>, callbacks, typed options.</span>
+            </div>
+            <div>
+              <strong>Native runtime</strong>
+              <span>accept, upgrade, read/write queues, frame processing, backpressure.</span>
+            </div>
+            <div>
+              <strong>I/O drivers</strong>
+              <span>epoll on Linux, kqueue on macOS/BSD, poll/select fallback.</span>
+            </div>
+          </div>
+
+          <div class="manual-note">
+            <p>
+              Protocol helpers such as <code>Protocol::encode()</code> and <code>Protocol::decode()</code>
+              are stateless and can be used by AMPHP, Revolt, Workerman, or other runtimes without adopting
+              the built-in server loop.
+            </p>
+          </div>
+        </section>
+
+        <section id="protocol-helpers">
+          <h2>Protocol Helpers</h2>
+          <p>Encode and decode RFC 6455 frames directly:</p>
+          <pre><code>&lt;?php
+
+use WebSocket\MessageType;
+use WebSocket\Protocol;
+
+$bytes = Protocol::encode('hello', MessageType::Text);
+$frame = Protocol::decode($bytes);
+
+echo $frame-&gt;payload; // hello</code></pre>
+        </section>
+
+        <section id="class-reference">
+          <h2>Class Reference</h2>
+          <p>
+            The reference follows the PHP manual style: each class lists its synopsis, methods,
+            parameters, common errors, and examples.
+          </p>
+        </section>
+
+        <section class="class-entry" id="server">
+          <h2>WebSocket\Server</h2>
+          <p class="synopsis">final class WebSocket\Server</p>
+          <p>
+            Native callback-based WebSocket server. It binds a TCP listener, performs HTTP Upgrade,
+            processes RFC 6455 frames, and dispatches user callbacks.
+          </p>
+
+          <h3>Constructor</h3>
+          <p class="synopsis">public function __construct(WebSocket\ServerOptions|array $options = [])</p>
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>maxMessageSize</code></td><td>Maximum accepted text or binary message size. Defaults to 16 MiB.</td></tr>
+              <tr><td><code>maxQueuedBytes</code></td><td>Maximum queued outgoing bytes per connection. Defaults to 16 MiB.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Methods</h3>
+          <div class="method-list">
+            <div class="method"><code>listen(string $host, int $port): void</code><br>Bind the TCP listener used by <code>run()</code>.</div>
+            <div class="method"><code>onOpen(Closure $handler): void</code><br>Register a callback called after a successful HTTP Upgrade. Returning <code>false</code> closes the accepted connection.</div>
+            <div class="method"><code>onMessage(Closure $handler): void</code><br>Register a callback called for complete text and binary messages.</div>
+            <div class="method"><code>onClose(Closure $handler): void</code><br>Register a callback called when an upgraded connection closes.</div>
+            <div class="method"><code>onError(Closure $handler): void</code><br>Register a callback for runtime errors.</div>
+            <div class="method"><code>run(): void</code><br>Start the accept, HTTP Upgrade, and frame processing loop.</div>
+            <div class="method"><code>stop(): void</code><br>Request graceful shutdown of the running server loop.</div>
+            <div class="method"><code>getDriver(): string</code><br>Return the active or best available I/O driver name.</div>
+          </div>
+        </section>
+
+        <section class="class-entry" id="server-options">
+          <h2>WebSocket\ServerOptions</h2>
+          <p class="synopsis">final class WebSocket\ServerOptions</p>
+          <p>Explicit immutable configuration for <code>WebSocket\Server</code>.</p>
+
+          <h3>Synopsis</h3>
+          <pre><code>final class ServerOptions
+{
+    public readonly int $maxMessageSize;
+    public readonly int $maxQueuedBytes;
+
+    public function __construct(
+        int $maxMessageSize = 16 * 1024 * 1024,
+        int $maxQueuedBytes = 16 * 1024 * 1024,
+    ) {}
+}</code></pre>
+
+          <h3>Errors/Exceptions</h3>
+          <p>Throws <code>ValueError</code> if a limit is less than <code>1</code>.</p>
+        </section>
+
+        <section class="class-entry" id="connection">
+          <h2>WebSocket\Connection</h2>
+          <p class="synopsis">final class WebSocket\Connection</p>
+          <p>Runtime connection accepted by <code>WebSocket\Server</code>.</p>
+
+          <h3>Properties</h3>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>readonly string $id</code></td><td>Runtime connection identifier.</td></tr>
+              <tr><td><code>readonly string $remoteAddress</code></td><td>Remote peer address.</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Methods</h3>
+          <div class="method-list">
+            <div class="method"><code>send(string $payload, MessageType $type = MessageType::Text): void</code><br>Send a text, binary, ping, pong, or close frame.</div>
+            <div class="method"><code>close(int $code = 1000, string $reason = ''): void</code><br>Send a close frame and close the connection.</div>
+            <div class="method"><code>isOpen(): bool</code><br>Check whether the underlying connection is still open.</div>
+          </div>
+        </section>
+
+        <section class="class-entry" id="protocol">
+          <h2>WebSocket\Protocol</h2>
+          <p class="synopsis">final class WebSocket\Protocol</p>
+          <p>Stateless RFC 6455 protocol helpers.</p>
+
+          <h3>Methods</h3>
+          <div class="method-list">
+            <div class="method"><code>acceptKey(string $key): string</code><br>Build <code>Sec-WebSocket-Accept</code> from <code>Sec-WebSocket-Key</code>.</div>
+            <div class="method"><code>encode(string $payload, MessageType $type = MessageType::Text, bool $masked = false): string</code><br>Encode one complete frame.</div>
+            <div class="method"><code>decode(string $buffer): Frame|CloseFrame|null</code><br>Decode one complete frame. Returns <code>null</code> when the buffer is incomplete.</div>
+            <div class="method"><code>pack(string|Frame|CloseFrame $data, int $opcode = Protocol::OPCODE_TEXT, int $flags = Protocol::FLAG_FIN): string</code><br>Encode a raw WebSocket frame.</div>
+            <div class="method"><code>unpack(string $buffer): Frame|CloseFrame|null</code><br>Decode one raw WebSocket frame.</div>
+          </div>
+        </section>
+
+        <section class="class-entry" id="frames">
+          <h2>Frames and Types</h2>
+          <table>
+            <thead>
+              <tr><th>Class</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>WebSocket\Frame</code></td><td>Decoded non-close frame with type, opcode, flags, payload, FIN state, and consumed byte count.</td></tr>
+              <tr><td><code>WebSocket\CloseFrame</code></td><td>Decoded close frame with status code, reason, flags, and consumed byte count.</td></tr>
+              <tr><td><code>WebSocket\MessageType</code></td><td>Enum cases: <code>Continuation</code>, <code>Text</code>, <code>Binary</code>, <code>Ping</code>, <code>Pong</code>, <code>Close</code>.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="production">
+          <h2>Production</h2>
+          <p>
+            Terminate TLS outside the extension with nginx, Caddy, Traefik, HAProxy, or stunnel.
+            Run multiple PHP server processes behind a load balancer or process manager when you need
+            to use multiple CPU cores.
+          </p>
+          <div class="manual-note warning">
+            <p>
+              Always set explicit <code>maxMessageSize</code> and <code>maxQueuedBytes</code> values for
+              the workload. These limits protect memory under large messages and slow clients.
+            </p>
+          </div>
+        </section>
+
+        <section id="benchmarks">
+          <h2>Benchmarks</h2>
+          <p>
+            The benchmark suite covers protocol encode/decode, server accept/upgrade runtime, and
+            real <code>ws://</code> / <code>wss://</code> message runtime against AMPHP, Workerman,
+            and OpenSwoole.
+          </p>
+          <p>
+            The important distinction is layer ownership: <code>Protocol</code> helpers can accelerate
+            existing async/userland runtimes, while <code>Server::run()</code> is a standalone native loop.
+          </p>
+        </section>
+
+        <section id="ide-support">
+          <h2>IDE Support</h2>
+          <p>
+            Use <code>websocket.stub.php</code> as an IDE/static-analysis stub for PhpStorm, PHPStan,
+            Psalm, or similar tools. It documents callback signatures, immutable options, typed frames,
+            value ranges, and common exceptions.
+          </p>
+        </section>
+
+        <section id="not-a-platform">
+          <h2>Scope</h2>
+          <p>
+            <code>ext-websocket</code> is not a Centrifugo replacement and does not implement Socket.IO.
+            It is a low-level native WebSocket runtime and codec for building custom realtime protocols
+            directly in PHP.
+          </p>
+        </section>
+
+        <footer class="footer">
+          <p>
+            ext-websocket is released under the MIT License. Documentation content is generated for
+            the open-source project at <a href="https://github.com/axcherednikov/php-websocket">github.com/axcherednikov/php-websocket</a>.
+          </p>
+        </footer>
+      </article>
+    </main>
+  </div>
+</body>
+</html>
