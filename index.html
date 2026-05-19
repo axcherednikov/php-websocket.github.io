@@ -5,7 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="ext-websocket manual: native PHP WebSocket extension with RFC 6455 protocol helpers and a callback-based server runtime.">
   <title>ext-websocket manual</title>
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("php-websocket-theme");
+        if (theme === "light" || theme === "dark") {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch (error) {
+      }
+    }());
+  </script>
   <link rel="stylesheet" href="manual.css">
+  <script src="theme.js" defer></script>
   <script src="syntax.js" defer></script>
 </head>
 <body>
@@ -22,6 +34,10 @@
         <a href="#class-reference">Reference</a>
         <a href="#production">Production</a>
       </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
+        <span class="theme-toggle-mark" aria-hidden="true"></span>
+        <span data-theme-toggle-label>Dark</span>
+      </button>
     </div>
   </header>
 
