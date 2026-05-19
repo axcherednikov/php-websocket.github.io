@@ -1,12 +1,18 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --ink: #202124;
   --muted: #626a73;
   --line: #d9dde3;
   --panel: #f6f7f9;
   --panel-strong: #eef1f5;
+  --masthead: #f8f9fb;
+  --sidebar: #fbfbfc;
+  --sidebar-link: #384052;
+  --lead: #3a4150;
   --brand: #4f5b93;
   --brand-dark: #30375f;
+  --brand-mark-border: #c5cae1;
+  --brand-mark-ink: #ffffff;
   --accent: #2f7d62;
   --warning: #8a5b11;
   --code: #111827;
@@ -23,6 +29,40 @@
   --code-flag: #9333ea;
   --surface: #ffffff;
   --shadow: 0 1px 2px rgba(20, 28, 40, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e6e9ef;
+    --muted: #9aa4b2;
+    --line: #2d3542;
+    --panel: #171d26;
+    --panel-strong: #1d2530;
+    --masthead: #10151d;
+    --sidebar: #0d1219;
+    --sidebar-link: #c7d0dc;
+    --lead: #c7d0dc;
+    --brand: #9da9ff;
+    --brand-dark: #c7ceff;
+    --brand-mark-border: #4f5b93;
+    --brand-mark-ink: #ffffff;
+    --accent: #66d9ad;
+    --warning: #f5c46b;
+    --code: #dce4ef;
+    --code-bg: #111821;
+    --code-border: #303a49;
+    --code-keyword: #c4a7ff;
+    --code-string: #6ee7c8;
+    --code-variable: #fbbf72;
+    --code-comment: #8b98a8;
+    --code-function: #8ab4ff;
+    --code-class: #ff8da1;
+    --code-number: #d8b4fe;
+    --code-command: #8ab4ff;
+    --code-flag: #d8b4fe;
+    --surface: #0b1017;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  }
 }
 
 * {
@@ -52,7 +92,7 @@ a:hover {
 
 .masthead {
   border-bottom: 1px solid var(--line);
-  background: #f8f9fb;
+  background: var(--masthead);
 }
 
 .masthead-inner {
@@ -79,10 +119,10 @@ a:hover {
   width: 36px;
   height: 36px;
   place-items: center;
-  border: 1px solid #c5cae1;
+  border: 1px solid var(--brand-mark-border);
   border-radius: 7px;
   background: var(--brand);
-  color: #fff;
+  color: var(--brand-mark-ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   letter-spacing: 0;
@@ -109,7 +149,7 @@ a:hover {
   height: 100vh;
   padding: 28px 24px;
   border-right: 1px solid var(--line);
-  background: #fbfbfc;
+  background: var(--sidebar);
   overflow: auto;
 }
 
@@ -130,7 +170,7 @@ a:hover {
 .sidebar a {
   display: block;
   padding: 7px 0;
-  color: #384052;
+  color: var(--sidebar-link);
   font-size: 14px;
   text-decoration: none;
 }
@@ -193,7 +233,7 @@ p {
 
 .lead {
   max-width: 780px;
-  color: #3a4150;
+  color: var(--lead);
   font-size: 19px;
 }
 
