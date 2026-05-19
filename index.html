@@ -6,6 +6,7 @@
   <meta name="description" content="ext-websocket manual: native PHP WebSocket extension with RFC 6455 protocol helpers and a callback-based server runtime.">
   <title>ext-websocket manual</title>
   <link rel="stylesheet" href="manual.css">
+  <script src="syntax.js" defer></script>
 </head>
 <body>
   <header class="masthead">
@@ -76,20 +77,20 @@
         <section id="installation">
           <h2>Installation</h2>
           <p>Install the extension with PIE:</p>
-          <pre><code>pie install axcherednikov/php-websocket</code></pre>
+          <pre><code class="language-bash">pie install axcherednikov/php-websocket</code></pre>
 
           <p>Or build from source:</p>
-          <pre><code>phpize
+          <pre><code class="language-bash">phpize
 ./configure --enable-websocket
 make
 make test
 sudo make install</code></pre>
 
           <p>Enable the extension in PHP:</p>
-          <pre><code>extension=websocket</code></pre>
+          <pre><code class="language-ini">extension=websocket</code></pre>
 
           <p>Verify that PHP can load it:</p>
-          <pre><code>php -m | grep websocket</code></pre>
+          <pre><code class="language-bash">php -m | grep websocket</code></pre>
 
           <p>
             See the project
@@ -101,7 +102,7 @@ sudo make install</code></pre>
         <section id="quick-start">
           <h2>Quick Start</h2>
           <p>A minimal echo server:</p>
-          <pre><code>&lt;?php
+          <pre><code class="language-php">&lt;?php
 
 use WebSocket\Connection;
 use WebSocket\MessageType;
@@ -167,7 +168,7 @@ $server-&gt;run();</code></pre>
         <section id="protocol-helpers">
           <h2>Protocol Helpers</h2>
           <p>Encode and decode RFC 6455 frames directly:</p>
-          <pre><code>&lt;?php
+          <pre><code class="language-php">&lt;?php
 
 use WebSocket\MessageType;
 use WebSocket\Protocol;
@@ -225,7 +226,7 @@ echo $frame-&gt;payload; // hello</code></pre>
           <p>Explicit immutable configuration for <code>WebSocket\Server</code>.</p>
 
           <h3>Synopsis</h3>
-          <pre><code>final class ServerOptions
+          <pre><code class="language-php">final class ServerOptions
 {
     public readonly int $maxMessageSize;
     public readonly int $maxQueuedBytes;
