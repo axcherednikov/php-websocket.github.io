@@ -16,6 +16,7 @@
       </a>
       <nav class="top-links" aria-label="Project links">
         <a href="https://github.com/axcherednikov/php-websocket">GitHub</a>
+        <a href="https://github.com/axcherednikov/php-websocket/blob/master/README.md">README</a>
         <a href="#installation">Install</a>
         <a href="#class-reference">Reference</a>
         <a href="#production">Production</a>
@@ -41,6 +42,7 @@
         <a href="#production">Production</a>
         <a href="#benchmarks">Benchmarks</a>
         <a href="#ide-support">IDE Support</a>
+        <a href="#project-resources">Project Resources</a>
       </nav>
     </aside>
 
@@ -88,6 +90,12 @@ sudo make install</code></pre>
 
           <p>Verify that PHP can load it:</p>
           <pre><code>php -m | grep websocket</code></pre>
+
+          <p>
+            See the project
+            <a href="https://github.com/axcherednikov/php-websocket/blob/master/README.md#installation">installation notes</a>
+            for repository-specific commands.
+          </p>
         </section>
 
         <section id="quick-start">
@@ -119,6 +127,10 @@ $server-&gt;onClose(static function (Connection $connection): void {
 });
 
 $server-&gt;run();</code></pre>
+          <p>
+            A fuller runnable example is available in
+            <a href="https://github.com/axcherednikov/php-websocket/blob/master/examples/run_server.php">examples/run_server.php</a>.
+          </p>
         </section>
 
         <section id="runtime-model">
@@ -294,6 +306,11 @@ echo $frame-&gt;payload; // hello</code></pre>
               the workload. These limits protect memory under large messages and slow clients.
             </p>
           </div>
+          <p>
+            Read the full
+            <a href="https://github.com/axcherednikov/php-websocket/blob/master/docs/production.md">production guide</a>
+            for TLS, process management, limits, backpressure, and deployment notes.
+          </p>
         </section>
 
         <section id="benchmarks">
@@ -307,6 +324,10 @@ echo $frame-&gt;payload; // hello</code></pre>
             The important distinction is layer ownership: <code>Protocol</code> helpers can accelerate
             existing async/userland runtimes, while <code>Server::run()</code> is a standalone native loop.
           </p>
+          <p>
+            Benchmark commands and current comparison notes live in
+            <a href="https://github.com/axcherednikov/php-websocket/blob/master/bench/README.md">bench/README.md</a>.
+          </p>
         </section>
 
         <section id="ide-support">
@@ -315,6 +336,10 @@ echo $frame-&gt;payload; // hello</code></pre>
             Use <code>websocket.stub.php</code> as an IDE/static-analysis stub for PhpStorm, PHPStan,
             Psalm, or similar tools. It documents callback signatures, immutable options, typed frames,
             value ranges, and common exceptions.
+          </p>
+          <p>
+            Download or reference the stub from
+            <a href="https://github.com/axcherednikov/php-websocket/blob/master/websocket.stub.php">websocket.stub.php</a>.
           </p>
         </section>
 
@@ -325,6 +350,22 @@ echo $frame-&gt;payload; // hello</code></pre>
             It is a low-level native WebSocket runtime and codec for building custom realtime protocols
             directly in PHP.
           </p>
+        </section>
+
+        <section id="project-resources">
+          <h2>Project Resources</h2>
+          <table>
+            <thead>
+              <tr><th>Resource</th><th>Link</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Source code</td><td><a href="https://github.com/axcherednikov/php-websocket">github.com/axcherednikov/php-websocket</a></td></tr>
+              <tr><td>Benchmarks</td><td><a href="https://github.com/axcherednikov/php-websocket/blob/master/bench/README.md">bench/README.md</a></td></tr>
+              <tr><td>Production guide</td><td><a href="https://github.com/axcherednikov/php-websocket/blob/master/docs/production.md">docs/production.md</a></td></tr>
+              <tr><td>IDE stub</td><td><a href="https://github.com/axcherednikov/php-websocket/blob/master/websocket.stub.php">websocket.stub.php</a></td></tr>
+              <tr><td>Changelog</td><td><a href="https://github.com/axcherednikov/php-websocket/blob/master/CHANGELOG.md">CHANGELOG.md</a></td></tr>
+            </tbody>
+          </table>
         </section>
 
         <footer class="footer">
