@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ext-websocket manual: native PHP WebSocket extension with RFC 6455 protocol helpers and a callback-based server runtime.">
+  <meta name="description" content="ext-websocket manual: native PHP WebSocket extension with RFC 6455 protocol helpers, server limits, and a callback-based server runtime.">
   <title>ext-websocket manual</title>
   <script>
     (function () {
@@ -35,7 +35,7 @@
         <a href="#production">Production</a>
       </nav>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" aria-pressed="false">
-        <span class="theme-toggle-mark" aria-hidden="true"></span>
+        <span class="theme-toggle-mark" aria-hidden="true">&nbsp;</span>
         <span data-theme-toggle-label>Dark</span>
       </button>
     </div>
@@ -69,15 +69,14 @@
           <p class="eyebrow">PHP extension manual</p>
           <h1>Native WebSocket runtime for PHP</h1>
           <p class="lead">
-            <code>ext-websocket</code> keeps RFC 6455 protocol work in C and exposes a small PHP API
-            for callback-based WebSocket servers, synchronous PHP code, and protocol helpers that can
-            be reused by higher-level runtimes.
+            <code>ext-websocket</code> implements RFC 6455 WebSocket parsing and frame encoding in C.
+            It provides a callback-based server runtime and stateless protocol helpers for PHP code.
           </p>
 
           <div class="quick-grid" aria-label="Project summary">
             <div class="quick-item">
               <strong>Native core</strong>
-              <span>HTTP Upgrade, frame parsing, masking, fragmentation, ping/pong, close frames.</span>
+              <span>HTTP Upgrade, frame parsing, random masking, fragmentation, ping/pong, close frames.</span>
             </div>
             <div class="quick-item">
               <strong>PHP 8.1+</strong>
@@ -86,6 +85,10 @@
             <div class="quick-item">
               <strong>Event-driven runtime</strong>
               <span>Non-blocking sockets with epoll, kqueue, poll, and select drivers.</span>
+            </div>
+            <div class="quick-item">
+              <strong>Server limits</strong>
+              <span>Connection caps, handshake and idle timeouts, UTF-8 checks, close-code validation.</span>
             </div>
           </div>
         </section>
@@ -127,6 +130,10 @@ use WebSocket\ServerOptions;
 
 $server = new Server(new ServerOptions(
     maxMessageSize: 1024 * 1024,
+    maxQueuedBytes: 1024 * 1024,
+    maxConnections: 2000,
+    handshakeTimeoutMs: 10000,
+    idleTimeoutMs: 120000,
 ));
 
 $server-&gt;listen('127.0.0.1', 8080);
@@ -145,7 +152,7 @@ $server-&gt;onClose(static function (Connection $connection): void {
 
 $server-&gt;run();</code></pre>
           <p>
-            A fuller runnable example is available in
+            A complete runnable example is available in
             <a href="https://github.com/axcherednikov/php-websocket/blob/master/examples/run_server.php">examples/run_server.php</a>.
           </p>
         </section>
@@ -193,13 +200,28 @@ $bytes = Protocol::encode('hello', MessageType::Text);
 $frame = Protocol::decode($bytes);
 
 echo $frame-&gt;payload; // hello</code></pre>
+          <p>
+            Pass <code>masked: true</code> when creating client-to-server frames. A random mask key is used
+            for each masked frame.
+          </p>
+          <pre><code class="language-php">&lt;?php
+
+use WebSocket\MessageType;
+use WebSocket\Protocol;
+
+$clientFrame = Protocol::encode('hello', MessageType::Text, masked: true);</code></pre>
+          <div class="manual-note">
+            <p>
+              Text frames and close reason payloads are UTF-8 data in RFC 6455. The server validates them
+              before dispatching messages to PHP callbacks.
+            </p>
+          </div>
         </section>
 
         <section id="class-reference">
           <h2>Class Reference</h2>
           <p>
-            The reference follows the PHP manual style: each class lists its synopsis, methods,
-            parameters, common errors, and examples.
+            This section lists public classes, constructors, methods, options, and common exceptions.
           </p>
         </section>
 
@@ -220,6 +242,9 @@ echo $frame-&gt;payload; // hello</code></pre>
             <tbody>
               <tr><td><code>maxMessageSize</code></td><td>Maximum accepted text or binary message size. Defaults to 16 MiB.</td></tr>
               <tr><td><code>maxQueuedBytes</code></td><td>Maximum queued outgoing bytes per connection. Defaults to 16 MiB.</td></tr>
+              <tr><td><code>maxConnections</code></td><td>Maximum concurrently accepted TCP connections. Defaults to 10000.</td></tr>
+              <tr><td><code>handshakeTimeoutMs</code></td><td>Maximum idle time before HTTP Upgrade completes. Defaults to 10000 ms.</td></tr>
+              <tr><td><code>idleTimeoutMs</code></td><td>Maximum idle time after HTTP Upgrade completes. Defaults to 120000 ms.</td></tr>
             </tbody>
           </table>
 
@@ -246,15 +271,35 @@ echo $frame-&gt;payload; // hello</code></pre>
 {
     public readonly int $maxMessageSize;
     public readonly int $maxQueuedBytes;
+    public readonly int $maxConnections;
+    public readonly int $handshakeTimeoutMs;
+    public readonly int $idleTimeoutMs;
 
     public function __construct(
         int $maxMessageSize = 16 * 1024 * 1024,
         int $maxQueuedBytes = 16 * 1024 * 1024,
+        int $maxConnections = 10000,
+        int $handshakeTimeoutMs = 10000,
+        int $idleTimeoutMs = 120000,
     ) {}
 }</code></pre>
 
           <h3>Errors/Exceptions</h3>
           <p>Throws <code>ValueError</code> if a limit is less than <code>1</code>.</p>
+
+          <h3>Options</h3>
+          <table>
+            <thead>
+              <tr><th>Property</th><th>Default</th><th>Use it for</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>maxMessageSize</code></td><td>16 MiB</td><td>Bounding inbound text and binary message memory.</td></tr>
+              <tr><td><code>maxQueuedBytes</code></td><td>16 MiB</td><td>Bounding per-connection outbound backpressure memory.</td></tr>
+              <tr><td><code>maxConnections</code></td><td>10000</td><td>Limiting concurrently accepted TCP sockets.</td></tr>
+              <tr><td><code>handshakeTimeoutMs</code></td><td>10000</td><td>Closing clients that connect but do not finish HTTP Upgrade in time.</td></tr>
+              <tr><td><code>idleTimeoutMs</code></td><td>120000</td><td>Closing upgraded connections that stop sending readable activity.</td></tr>
+            </tbody>
+          </table>
         </section>
 
         <section class="class-entry" id="connection">
@@ -275,8 +320,8 @@ echo $frame-&gt;payload; // hello</code></pre>
 
           <h3>Methods</h3>
           <div class="method-list">
-            <div class="method"><code>send(string $payload, MessageType $type = MessageType::Text): void</code><br>Send a text, binary, ping, pong, or close frame.</div>
-            <div class="method"><code>close(int $code = 1000, string $reason = ''): void</code><br>Send a close frame and close the connection.</div>
+            <div class="method"><code>send(string $payload, MessageType $type = MessageType::Text): void</code><br>Send a text, binary, ping, pong, or close frame. Text payloads and close reasons must be valid UTF-8; control frames are limited to 125 bytes.</div>
+            <div class="method"><code>close(int $code = 1000, string $reason = ''): void</code><br>Send a close frame and close the connection. The close code must be allowed on the wire and the reason must be valid UTF-8.</div>
             <div class="method"><code>isOpen(): bool</code><br>Check whether the underlying connection is still open.</div>
           </div>
         </section>
@@ -289,9 +334,9 @@ echo $frame-&gt;payload; // hello</code></pre>
           <h3>Methods</h3>
           <div class="method-list">
             <div class="method"><code>acceptKey(string $key): string</code><br>Build <code>Sec-WebSocket-Accept</code> from <code>Sec-WebSocket-Key</code>.</div>
-            <div class="method"><code>encode(string $payload, MessageType $type = MessageType::Text, bool $masked = false): string</code><br>Encode one complete frame.</div>
+            <div class="method"><code>encode(string $payload, MessageType $type = MessageType::Text, bool $masked = false): string</code><br>Encode one complete frame. When <code>$masked</code> is <code>true</code>, the frame uses a random mask key.</div>
             <div class="method"><code>decode(string $buffer): Frame|CloseFrame|null</code><br>Decode one complete frame. Returns <code>null</code> when the buffer is incomplete.</div>
-            <div class="method"><code>pack(string|Frame|CloseFrame $data, int $opcode = Protocol::OPCODE_TEXT, int $flags = Protocol::FLAG_FIN): string</code><br>Encode a raw WebSocket frame.</div>
+            <div class="method"><code>pack(string|Frame|CloseFrame $data, int $opcode = Protocol::OPCODE_TEXT, int $flags = Protocol::FLAG_FIN): string</code><br>Encode a raw WebSocket frame. <code>Protocol::FLAG_MASK</code> uses a random mask key.</div>
             <div class="method"><code>unpack(string $buffer): Frame|CloseFrame|null</code><br>Decode one raw WebSocket frame.</div>
           </div>
         </section>
@@ -319,10 +364,21 @@ echo $frame-&gt;payload; // hello</code></pre>
           </p>
           <div class="manual-note warning">
             <p>
-              Always set explicit <code>maxMessageSize</code> and <code>maxQueuedBytes</code> values for
-              the workload. These limits protect memory under large messages and slow clients.
+              Always set explicit <code>maxMessageSize</code>, <code>maxQueuedBytes</code>,
+              <code>maxConnections</code>, <code>handshakeTimeoutMs</code>, and <code>idleTimeoutMs</code>
+              values for your workload. These limits protect memory and sockets under large messages,
+              slow clients, incomplete handshakes, and idle upgraded connections.
             </p>
           </div>
+          <pre><code class="language-php">&lt;?php
+
+$server = new WebSocket\Server(new WebSocket\ServerOptions(
+    maxMessageSize: 2 * 1024 * 1024,
+    maxQueuedBytes: 2 * 1024 * 1024,
+    maxConnections: 5000,
+    handshakeTimeoutMs: 5000,
+    idleTimeoutMs: 60000,
+));</code></pre>
           <p>
             Read the full
             <a href="https://github.com/axcherednikov/php-websocket/blob/master/docs/production.md">production guide</a>
@@ -338,8 +394,8 @@ echo $frame-&gt;payload; // hello</code></pre>
             and OpenSwoole.
           </p>
           <p>
-            The important distinction is layer ownership: <code>Protocol</code> helpers can accelerate
-            existing async/userland runtimes, while <code>Server::run()</code> is a standalone native loop.
+            <code>Protocol</code> helpers can be used by existing async/userland runtimes.
+            <code>Server::run()</code> starts the extension's built-in event loop.
           </p>
           <p>
             Benchmark commands and current comparison notes live in
@@ -387,8 +443,8 @@ echo $frame-&gt;payload; // hello</code></pre>
 
         <footer class="footer">
           <p>
-            ext-websocket is released under the MIT License. Documentation content is generated for
-            the open-source project at <a href="https://github.com/axcherednikov/php-websocket">github.com/axcherednikov/php-websocket</a>.
+            ext-websocket is released under the MIT License. Source code is available at
+            <a href="https://github.com/axcherednikov/php-websocket">github.com/axcherednikov/php-websocket</a>.
           </p>
         </footer>
       </article>
